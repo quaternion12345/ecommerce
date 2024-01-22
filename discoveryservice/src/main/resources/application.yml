@@ -1,0 +1,11 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: discoveryservice
+
+eureka:
+  client: # exclude register itself
+    register-with-eureka: false
+    fetch-registry: false
