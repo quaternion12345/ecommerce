@@ -4,19 +4,22 @@
 <h5>Spring Cloud로 개발하는 마이크로서비스 애플리케이션 강의를 기반으로 개발한 웹 서비스입니다.</h5>
 <h5>현재 API 테스팅을 위한 도구 기능만을 제공하고 있습니다.</h5>
 <hr>
-<div class="col-md-4">
-    <h5>GET 요청</h5>
+<div class="col-md-4" style="display:inline-block;">
+    <h5>기본적인 HTTP 요청</h5>
     <form>
+        <div class="form-group">
+            <label for="http-method">HTTP Method</label>
+            <input type="text" class="form-control" id="http-method" placeholder="HTTP Method를 입력하세요">
+        </div>
         <div class="form-group">
             <label for="normal-uri">URI</label>
             <input type="text" class="form-control" id="normal-uri" placeholder="URI를 입력하세요">
         </div>
         <div><input type="reset" class="btn btn-secondary"></div>
     </form>
-    <button type="button" class="btn btn-primary" id="btn-get">전송</button>
+    <button type="button" class="btn btn-primary" id="btn-rest">전송</button>
 </div>
-<hr>
-<div class="col-md-4">
+<div class="col-md-4" style="display:inline-block;">
     <h5>토큰을 포함한 GET 요청</h5>
     <form>
         <div class="form-group">
@@ -32,7 +35,7 @@
     <button type="button" class="btn btn-primary" id="btn-tokenget">전송</button>
 </div>
 <hr>
-<div class="col-md-4">
+<div class="col-md-4" style="display:inline-block;">
     <h5>회원가입(/user-service/users)</h5>
     <form>
         <div class="form-group">
@@ -51,8 +54,7 @@
     </form>
     <button type="button" class="btn btn-primary" id="btn-signup">전송</button>
 </div>
-<hr>
-<div class="col-md-4">
+<div class="col-md-4" style="display:inline-block; vertical-align:top;">
     <h5>로그인(/user-service/login)</h5>
     <form>
         <div class="form-group">

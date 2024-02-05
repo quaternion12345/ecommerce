@@ -7,8 +7,8 @@ var main = { // 스코프 선언
         $('#btn-login').on('click', function() {
             _this.login();
         });
-        $('#btn-get').on('click', function() {
-            _this.get();
+        $('#btn-rest').on('click', function() {
+            _this.rest();
         });
         $('#btn-tokenget').on('click', function() {
             _this.tokenget();
@@ -51,16 +51,17 @@ var main = { // 스코프 선언
             alert(JSON.stringify(error));
         });
     },
-    get : function() {
+    rest : function() {
+        var method = $('#http-method').val();
         var uri = $('#normal-uri').val();
 
         $.ajax({
-            type: 'GET',
+            type: method,
             url: uri,
             dataType: 'json',
             contentType: 'application/json; charset=utf-8'
         }).done(function (data){
-            alert('GET 요청 성공' + JSON.stringify(data));
+            alert(method + ' 요청 성공' + JSON.stringify(data));
         }).fail(function (error){
             alert(JSON.stringify(error));
         });
