@@ -13,6 +13,9 @@ var main = { // 스코프 선언
         $('#btn-tokenget').on('click', function() {
             _this.tokenget();
         });
+        $('#btn-order').on('click', function() {
+            _this.order();
+        });
     },
     signup : function() {
         var data = {
@@ -81,6 +84,26 @@ var main = { // 스코프 선언
         }).done(function (data){
             alert('GET 요청 성공' + JSON.stringify(data));
         }).fail(function (error){
+            alert(JSON.stringify(error));
+        });
+    },
+    order : function() {
+        var userId = $('#order-userid').val();
+        var data = {
+            productId: $('#order-productid').val(),
+            qty: $('#order-qty').val(),
+            unitPrice: $('#order-unitprice').val()
+        };
+
+        $.ajax({
+            type: 'POST',
+            url: '/order-service/' + userId + '/orders',
+            dataType: 'json',
+            contentType: 'application/json; charset=utf-8',
+            data: JSON.stringify(data)
+        }).done(function(data) {
+            alert("주문 요청 성공" + JSON.stringify(data));
+        }).fail(function (error) {
             alert(JSON.stringify(error));
         });
     }
