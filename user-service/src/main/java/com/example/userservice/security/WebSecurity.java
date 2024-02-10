@@ -34,7 +34,7 @@ public class WebSecurity{
 //                .authorizeRequests((authz) -> authz.requestMatchers("/users/**").permitAll())
                 .authorizeRequests((authz) -> authz.requestMatchers("/actuator/**").permitAll())
                 .authorizeRequests((authz) -> authz.requestMatchers("/**")
-                        .hasIpAddress("host.docker.internal")
+                        .hasIpAddress("172.18.0.3")
                         .and()
                         .addFilter(getAuthenticationFilter()))
                 .headers(AbstractHttpConfigurer::disable)
