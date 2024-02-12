@@ -1,7 +1,7 @@
 encrypt:
-#  key: abcdefghijklmnopqrstuvwxyz0123456789
+#  key: custom_string_key
   key-store:
 #    location: file:///C:\GitRepo\keystore\apiEncryptionKey.jks
-    location: file:/apiEncryptionKey.jks
-    password: test1234
-    alias: apiEncryptionKey
+    location: file:/apiEncryptionKey.jks # key file location
+    password: test1234 # password of key file
+    alias: apiEncryptionKey # alias of key file
