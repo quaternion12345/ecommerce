@@ -4,31 +4,31 @@ server:
 spring:
   application:
     name: user-service
-#  zipkin:
-#    base-url: http://127.0.0.1:9411
-#    enabled: true
-#  sleuth:
-#    sampler:
-#      probability: 1.0
   rabbitmq:
     host: 127.0.0.1
     port: 5672
     username: guest
     password: guest
-  h2:
-    console:
-      enabled: true
-      settings:
-        web-allow-others: true
-      path: /h2-console
-#  datasource:
-#    driver-class-name: org.h2.Driver
-#    url: jdbc:h2:mem:testdb
-#    username: sa
-#    password: 1234
+  datasource:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3316/mydb?serverTimezone=Asia/Seoul&useSSL=false
+      username: root
+      password: users
+  data:
+    mongodb:
+      host: localhost
+      port: 27117
+      authentication-database: admin
+      username: user_user
+      password: user_password
+      database: mydb
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: true
+    generate-ddl: false
 
 eureka:
   instance:
@@ -39,14 +39,14 @@ eureka:
     service-url: # register itself to eureka server end point
       defaultZone: http://localhost:8761/eureka
 
-greeting:
-  message: Welcome to the Simple E-commerce.
+#greeting:
+#  message: Welcome to the Simple E-commerce.
 
 logging:
   level:
     com.example.userservice.client: DEBUG
-  pattern:
-    level: '%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]'
+#  pattern:
+#    level: '%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]'
 
 management:
   tracing:
@@ -63,6 +63,15 @@ management:
       exposure:
         include: refresh, health, beans, busrefresh, info, metrics, prometheus
 
-#token:
-#  expiration_time: 86400000 # 24 * 60 * 60 * 1000
-#  secret: user_token
+token:
+  expiration_time: 86400000 # 24 * 60 * 60 * 1000
+  secret: user_token
+
+gateway:
+  ip: 172.18.0.3
+
+# Env for RestTemplate & Error Decoder
+order_service:
+  url: http://ORDER-SERVICE/order-service/%s/orders
+  exception:
+    orders_is_empty: There is no item.

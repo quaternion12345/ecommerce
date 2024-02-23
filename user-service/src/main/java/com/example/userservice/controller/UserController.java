@@ -1,22 +1,28 @@
 package com.example.userservice.controller;
 
 import com.example.userservice.dto.UserDto;
-import com.example.userservice.jpa.UserEntity;
 import com.example.userservice.service.UserService;
-import com.example.userservice.vo.Greeting;
+import com.example.userservice.vo.RequestUpdateUser;
 import com.example.userservice.vo.RequestUser;
 import com.example.userservice.vo.ResponseUser;
 import io.micrometer.core.annotation.Timed;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/")
@@ -24,8 +30,8 @@ public class UserController {
     private Environment env;
     private UserService userService;
 
-    @Autowired
-    private Greeting greeting;
+//    @Autowired
+//    private Greeting greeting;
 
 
     @Autowired
@@ -34,40 +40,83 @@ public class UserController {
         this.userService = userService;
     }
 
+//    @GetMapping("/welcome")
+//    @Timed(value = "users.welcome", longTask = true)
+//    public String welcome(){
+////        return env.getProperty("greeting.message");
+//        return greeting.getMessage();
+//    }
+
+    // 서버 health check
     @GetMapping("/health_check")
     @Timed(value = "users.status", longTask = true)
     public String status(){
         return String.format("It's Working in User Service"
                 + ", port(local.server.port)=" + env.getProperty("local.server.port")
                 + ", port(server.port)=" + env.getProperty("server.port")
-                + ", token secret=" + env.getProperty("token.secret")
-                + ", token expiration time=" + env.getProperty("token.expiration_time")
+//                + ", token secret=" + env.getProperty("token.secret")
+//                + ", token expiration time=" + env.getProperty("token.expiration_time")
         );
     }
 
-    @GetMapping("/welcome")
-    @Timed(value = "users.welcome", longTask = true)
-    public String welcome(){
-//        return env.getProperty("greeting.message");
-        return greeting.getMessage();
+    // Bean Validation Exception Handler
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<List<Map<String, String>>> beanValidationHandler(MethodArgumentNotValidException ex){
+        List<Map<String, String>> errors = new ArrayList<>();
+        ex.getBindingResult().getFieldErrors().forEach(
+                error -> {
+                    errors.add(
+                        new HashMap<>(){{
+                            put("fieldName", error.getField());
+                            put("rejectedValue", (error.getRejectedValue() == null) ? null : error.getRejectedValue().toString());
+                            put("message", error.getDefaultMessage());
+                        }}
+                    );
+                });
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
     }
 
+    // BadRequest Exception Handler
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<Map<String, String>> badRequestHandler(BadRequestException ex){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new HashMap<>(){{
+            put("message", ex.getMessage());
+        }});
+    }
+
+    // Forbidden Exception Handler
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Map<String, String>> forbiddenHandler(ForbiddenException ex){
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new HashMap<>(){{
+            put("message", "You don't have permission to edit");
+        }});
+    }
+
+    // NotFound Exception Handler
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Map<String, String>> notFoundHandler(NotFoundException ex){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new HashMap<>(){{
+            put("message", ex.getMessage() + " not found");
+        }});
+    }
+
+    // 회원 가입
     @PostMapping("/users")
-    public ResponseEntity<ResponseUser> createUser(@RequestBody RequestUser user){
+    public ResponseEntity<ResponseUser> createUser(@RequestBody @Valid RequestUser user){
         ModelMapper mapper = new ModelMapper();
         mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
-
         UserDto userDto = mapper.map(user, UserDto.class);
-        userService.createUser(userDto);
 
-        ResponseUser responseUser = mapper.map(userDto, ResponseUser.class);
+        UserDto createdUser = userService.createUser(userDto);
 
+        ResponseUser responseUser = mapper.map(createdUser, ResponseUser.class);
         return ResponseEntity.status(HttpStatus.CREATED).body(responseUser);
     }
 
+    // 전체 회원 정보 조회
     @GetMapping("/users")
     public ResponseEntity<List<ResponseUser>> getUsers(){
-        Iterable<UserEntity> userList = userService.getUserByAll();
+        Iterable<UserDto> userList = userService.getUserByAll();
 
         List<ResponseUser> result = new ArrayList<>();
         userList.forEach(v -> {
@@ -77,12 +126,28 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
-    @GetMapping("/users/{userId}")
+    // 개인 회원 정보 조회
+    @GetMapping("/{userId}/users")
     public ResponseEntity<ResponseUser> getUser(@PathVariable("userId") String userId){
-        UserDto userDto = userService.getUserByUserId(userId);
+        return ResponseEntity.status(HttpStatus.OK).body(new ModelMapper().map(userService.getUserByUserId(userId), ResponseUser.class));
+    }
 
-        ResponseUser returnValue = new ModelMapper().map(userDto, ResponseUser.class);
+    // 개인 회원 정보 수정 -> 주문 정보에도 반영 필요(UPDATE)
+    @PatchMapping("/{userId}/users")
+    public ResponseEntity<ResponseUser> updateUser(@PathVariable("userId") String userId, @RequestBody @Valid RequestUpdateUser requestUser){
+        ModelMapper mapper = new ModelMapper();
+        UserDto userDto = mapper.map(requestUser, UserDto.class);
 
-        return ResponseEntity.status(HttpStatus.OK).body(returnValue);
+        UserDto updatedUser = userService.updateUser(userId, userDto);
+
+        ResponseUser responseUser = mapper.map(updatedUser, ResponseUser.class);
+        return  ResponseEntity.status(HttpStatus.OK).body(responseUser);
+    }
+
+    // 회원 탈퇴 -> 주문 정보에도 반영 필요(CASCADE)
+    @DeleteMapping("/{userId}/users")
+    public ResponseEntity<ResponseUser> deleteUser(@PathVariable("userId") String userId){
+        userService.deleteUser(userId);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }
