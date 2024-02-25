@@ -1,23 +1,17 @@
 package com.example.userservice.security;
 
 import com.example.userservice.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authorization.AuthorizationDecision;
-import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
-import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.IpAddressMatcher;
 
@@ -49,8 +43,8 @@ public class WebSecurity{
                                 // localhost로 요청을 하면 IPv6 주소인 0:0:0:0:0:0:0:1을 값으로 가져옴
                                 // 127.0.0.1로 요청을 하면 IPv4 주소인 127.0.0.1을 값으로 가져옴
 //                                    .access(((authentication, context) -> new AuthorizationDecision(new IpAddressMatcher("0:0:0:0:0:0:0:1").matches(context.getRequest()))))
-                                    .access(((authentication, context) -> new AuthorizationDecision(new IpAddressMatcher("127.0.0.1").matches(context.getRequest()))))
-//                                    .access(((authentication, context) -> new AuthorizationDecision(new IpAddressMatcher("172.18.0.5").matches(context.getRequest()))))
+//                                    .access(((authentication, context) -> new AuthorizationDecision(new IpAddressMatcher("127.0.0.1").matches(context.getRequest()))))
+                                    .access(((authentication, context) -> new AuthorizationDecision(new IpAddressMatcher(env.getProperty("gateway.ip")).matches(context.getRequest()))))
                 )
                 .addFilter(getAuthenticationFilter())
                 .build();

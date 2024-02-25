@@ -1,15 +1,15 @@
 package com.example.userservice.controller;
 
 import com.example.userservice.dto.UserDto;
+import com.example.userservice.exception.BadRequestException;
+import com.example.userservice.exception.ForbiddenException;
+import com.example.userservice.exception.NotFoundException;
 import com.example.userservice.service.UserService;
 import com.example.userservice.vo.RequestUpdateUser;
 import com.example.userservice.vo.RequestUser;
 import com.example.userservice.vo.ResponseUser;
 import io.micrometer.core.annotation.Timed;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.NotFoundException;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,7 +88,7 @@ public class UserController {
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<Map<String, String>> forbiddenHandler(ForbiddenException ex){
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new HashMap<>(){{
-            put("message", "You don't have permission to edit");
+            put("message", "You don't have permission to edit" + ex.getMessage());
         }});
     }
 

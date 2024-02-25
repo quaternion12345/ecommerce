@@ -7,10 +7,6 @@ import lombok.Data;
 
 @Data
 public class RequestUpdateUser {
-    @Size(min = 2, message = "Email cannot be less than two characters")
-    @Email(message = "Invalid email Format")
-    private String email;
-
     @Size(min = 2, message = "Name cannot be less than two characters")
     private String name;
 
