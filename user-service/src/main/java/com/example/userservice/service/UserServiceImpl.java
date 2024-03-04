@@ -123,7 +123,7 @@ public class UserServiceImpl implements UserService{
     @Override
     @Transactional
     public UserDto updateUser(String userId, UserDto userDto) {
-        MySQLUserEntity mySQLUserEntity = mySQLUserRepository.findByUserId(userId).orElseThrow(NotFoundException::new);
+        MySQLUserEntity mySQLUserEntity = mySQLUserRepository.findByUserId(userId).orElseThrow(() -> new NotFoundException("userId: " + userId));
 
         // 값 유효성 확인
         if(userDto.getName() == null && userDto.getPwd() == null) throw new BadRequestException("Empty Input");
@@ -131,9 +131,6 @@ public class UserServiceImpl implements UserService{
         // 수정 수행
         if(userDto.getPwd() != null) userDto.setEncryptedPwd(bCryptPasswordEncoder.encode(userDto.getPwd()));
         mySQLUserEntity.updateUser(userDto);
-
-        // Order Service에 주문내역 업데이트 Event 전송
-
 
         return new ModelMapper().map(mySQLUserEntity, UserDto.class);
     }

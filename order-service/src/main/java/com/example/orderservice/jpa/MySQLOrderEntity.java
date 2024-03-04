@@ -1,16 +1,22 @@
 package com.example.orderservice.jpa;
 
+import com.example.orderservice.dto.OrderDto;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.io.Serializable;
 import java.util.Date;
 
-@Data
+@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@Table(name = "orders")
-public class OrderEntity implements Serializable {
+@DynamicUpdate
+@Table(name = "ecommerce_orders")
+public class MySQLOrderEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -36,4 +42,9 @@ public class OrderEntity implements Serializable {
     @Column(nullable = false, updatable = false, insertable = false)
     @ColumnDefault(value = "CURRENT_TIMESTAMP")
     private Date createdAt;
+
+    public void updateOrder(OrderDto orderDto) {
+        this.qty = orderDto.getQty();
+        this.totalPrice = orderDto.getUnitPrice() * orderDto.getQty();
+    }
 }
