@@ -36,6 +36,9 @@ public class MySQLUserEntity implements Serializable {
     @Column(nullable = false, unique = true)
     private String encryptedPwd;
 
+    @Column(name = "valid")
+    private boolean valid;
+
     @Column(nullable = false, updatable = false, insertable = false)
     @ColumnDefault(value = "CURRENT_TIMESTAMP")
     private Date createdAt;
@@ -43,5 +46,13 @@ public class MySQLUserEntity implements Serializable {
     public void updateUser(UserDto userDto) {
         if(userDto.getName() != null) this.name = userDto.getName();
         if(userDto.getEncryptedPwd() != null) this.encryptedPwd = userDto.getEncryptedPwd();
+    }
+
+    public void deleteUser(){
+        this.valid = false;
+    }
+
+    public void rollbackUser(){
+        this.valid = true;
     }
 }

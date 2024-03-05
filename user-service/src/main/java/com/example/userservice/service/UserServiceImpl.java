@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.core.env.Environment;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -36,20 +38,23 @@ public class UserServiceImpl implements UserService{
     MongoUserRepository mongoUserRepository;
     BCryptPasswordEncoder bCryptPasswordEncoder;
     Environment env;
-    RestTemplate restTemplate;
+//    RestTemplate restTemplate;
     OrderServiceClient orderServiceClient;
     CircuitBreakerFactory circuitBreakerFactory;
 
+    KafkaTemplate kafkaTemplate;
+
 
     @Autowired
-    public UserServiceImpl(MySQLUserRepository mySQLUserRepository, MongoUserRepository mongoUserRepository, BCryptPasswordEncoder bCryptPasswordEncoder, Environment env, RestTemplate restTemplate, OrderServiceClient orderServiceClient, CircuitBreakerFactory circuitBreakerFactory){
+    public UserServiceImpl(MySQLUserRepository mySQLUserRepository, MongoUserRepository mongoUserRepository, BCryptPasswordEncoder bCryptPasswordEncoder, Environment env, OrderServiceClient orderServiceClient, CircuitBreakerFactory circuitBreakerFactory, KafkaTemplate kafkaTemplate){
         this.mySQLUserRepository = mySQLUserRepository;
         this.mongoUserRepository = mongoUserRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.env = env;
-        this.restTemplate = restTemplate;
+//        this.restTemplate = restTemplate;
         this.orderServiceClient = orderServiceClient;
         this.circuitBreakerFactory = circuitBreakerFactory;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     @Override
@@ -75,6 +80,7 @@ public class UserServiceImpl implements UserService{
     @Transactional(readOnly = true)
     public List<UserDto> getUserByAll() {
         return StreamSupport.stream(mongoUserRepository.findAll().spliterator(), false)
+                .filter(h -> h.isValid())
                 .map(p -> new ModelMapper().map(p, UserDto.class))
                 .collect(Collectors.toList());
     }
@@ -84,6 +90,7 @@ public class UserServiceImpl implements UserService{
     public UserDto getUserByUserId(String userId) {
         // Get User Info From Query DB
         MongoUserEntity mongoUserEntity = mongoUserRepository.findByUserId(userId).orElseThrow(() -> new NotFoundException("userId: " + userId));
+        if(!mongoUserEntity.isValid()) throw new NotFoundException("userId: " + userId);
 
         UserDto userDto = new ModelMapper().map(mongoUserEntity, UserDto.class);
 
@@ -139,17 +146,30 @@ public class UserServiceImpl implements UserService{
     @Transactional
     public void deleteUser(String userId) {
         // 삭제 수행
-        mySQLUserRepository.delete(mySQLUserRepository.findByUserId(userId).orElseThrow(() -> new NotFoundException("userId: " + userId)));
+//        mySQLUserRepository.delete(mySQLUserRepository.findByUserId(userId).orElseThrow(() -> new NotFoundException("userId: " + userId)));
+
+        // Soft Delete 수행
+        MySQLUserEntity mySQLUserEntity = mySQLUserRepository.findByUserId(userId).orElseThrow(() -> new NotFoundException("userId: " + userId));
+        mySQLUserEntity.deleteUser();
 
         // Order Service에 주문내역 삭제 Event 전송
+        kafkaTemplate.send("delete-user", userId);
+    }
 
+    @Scheduled(fixedDelay = 1000 * 60 * 5)
+    @Transactional
+    public void cleanUp(){
+        StreamSupport.stream(mySQLUserRepository.findAll().spliterator(), false)
+                .filter(h -> !h.isValid())
+                .forEach(p -> mySQLUserRepository.delete(p));
     }
 
     @Override
     public UserDto getUserDetailsByEmail(String email) {
-        return new ModelMapper().map(
-                mySQLUserRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(email)),
-                UserDto.class);
+        MySQLUserEntity mySQLUserEntity = mySQLUserRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(email));
+        if(!mySQLUserEntity.isValid()) throw new UsernameNotFoundException(email);
+
+        return new ModelMapper().map(mySQLUserEntity, UserDto.class);
     }
 
     // Spring Security가 DB에서 User 정보를 가져오는데 사용
@@ -158,6 +178,7 @@ public class UserServiceImpl implements UserService{
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         MySQLUserEntity mySQLUserEntity = mySQLUserRepository.findByEmail(username).orElseThrow(() -> new UsernameNotFoundException(username));
+        if(!mySQLUserEntity.isValid()) throw new UsernameNotFoundException(username);
 
         return new User(mySQLUserEntity.getEmail(), mySQLUserEntity.getEncryptedPwd(), true, true, true, true, new ArrayList<>());
     }

@@ -20,5 +20,7 @@ public class MongoUserEntity {
 
     private String encryptedPwd;
 
+    private boolean valid;
+
     private Date createdAt;
 }

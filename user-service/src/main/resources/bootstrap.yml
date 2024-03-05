@@ -4,3 +4,5 @@ spring:
       uri: http://config-service:8888 # http://localhost:8888
       name: user-service
 #      enabled: false
+#  profiles:
+#    active: dev
