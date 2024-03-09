@@ -1,20 +1,21 @@
 package com.example.catalogservice.service;
 
 import com.example.catalogservice.dto.CatalogDto;
+import com.example.catalogservice.exception.BadRequestException;
+import com.example.catalogservice.exception.NotFoundException;
+import com.example.catalogservice.jpa.MongoCatalogEntity;
 import com.example.catalogservice.jpa.MongoCatalogRepository;
 import com.example.catalogservice.jpa.MySQLCatalogEntity;
 import com.example.catalogservice.jpa.MySQLCatalogRepository;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.modelmapper.config.Configuration;
-import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -42,15 +43,15 @@ public class CatalogServiceImpl implements CatalogService{
     @Override
     @Transactional(readOnly = true)
     public CatalogDto getCatalog(String productId) {
-        return new ModelMapper().map(mongoCatalogRepository.findByProductId(productId).orElseThrow(NoSuchElementException::new), CatalogDto.class);
+        MongoCatalogEntity mongoCatalogEntity = mongoCatalogRepository.findByProductId(productId).orElseThrow(() -> new NotFoundException("productId: " + productId));
+        return new ModelMapper().map(mongoCatalogEntity, CatalogDto.class);
     }
 
     @Override
     @Transactional
     public CatalogDto createCatalog(CatalogDto catalogDto) {
-        // Bad Inputs
-        if(catalogDto.getUnitPrice() != null && catalogDto.getUnitPrice() < 0) throw new NoSuchElementException();
-        if(catalogDto.getStock() != null && catalogDto.getStock() < 0) throw new NoSuchElementException();
+        // Generate productId
+        catalogDto.setProductId(UUID.randomUUID().toString());
 
         MySQLCatalogEntity mySQLCatalogEntity = MySQLCatalogEntity.builder()
                 .productId(catalogDto.getProductId())
@@ -65,10 +66,10 @@ public class CatalogServiceImpl implements CatalogService{
     @Override
     @Transactional
     public CatalogDto updateCatalog(String productId, CatalogDto catalogDto) {
-        MySQLCatalogEntity mySQLCatalogEntity = mySQLCatalogRepository.findByProductId(productId).orElseThrow(NoSuchElementException::new);
+        MySQLCatalogEntity mySQLCatalogEntity = mySQLCatalogRepository.findByProductId(productId).orElseThrow(() -> new NotFoundException("productId: " + productId));
         // Bad Inputs
-        if(catalogDto.getUnitPrice() != null && catalogDto.getUnitPrice() < 0) throw new NoSuchElementException();
-        if(catalogDto.getStock() != null && catalogDto.getStock() < 0) throw new NoSuchElementException();
+        if(catalogDto.getProductName() == null && catalogDto.getUnitPrice() == null && catalogDto.getStock() == null) throw new BadRequestException("Empty Input");
+
         // Update Using Dirty Checking
         mySQLCatalogEntity.updateCatalog(catalogDto);
         return new ModelMapper().map(mySQLCatalogEntity, CatalogDto.class);
@@ -78,7 +79,7 @@ public class CatalogServiceImpl implements CatalogService{
     @Transactional
     public void deleteCatalog(String productId) {
         mySQLCatalogRepository.delete(
-                mySQLCatalogRepository.findByProductId(productId).orElseThrow(NoSuchElementException::new)
+                mySQLCatalogRepository.findByProductId(productId).orElseThrow(() -> new NotFoundException("productId: " + productId))
         );
     }
 }

@@ -3,7 +3,6 @@ package com.example.orderservice;
 import com.example.orderservice.dto.OrderDto;
 import com.example.orderservice.exception.BadRequestException;
 import com.example.orderservice.exception.NotFoundException;
-import com.example.orderservice.messagequeue.KafkaProducer;
 import com.example.orderservice.messagequeue.OrderProducer;
 import com.example.orderservice.service.OrderService;
 import com.example.orderservice.vo.RequestOrder;
@@ -33,7 +32,7 @@ class OrderControllerTests {
 	@Autowired private MockMvc mockMvc;
 
 	@MockBean private OrderService orderService;
-	@MockBean private KafkaProducer kafkaProducer;
+//	@MockBean private KafkaProducer kafkaProducer;
 	@MockBean private OrderProducer orderProducer;
 
 

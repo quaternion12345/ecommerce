@@ -39,6 +39,9 @@ public class MySQLOrderEntity implements Serializable {
     @Column(nullable = false, unique = true)
     private String orderId;
 
+    @Column(name = "valid")
+    private boolean valid;
+
     @Column(nullable = false, updatable = false, insertable = false)
     @ColumnDefault(value = "CURRENT_TIMESTAMP")
     private Date createdAt;
@@ -46,5 +49,13 @@ public class MySQLOrderEntity implements Serializable {
     public void updateOrder(OrderDto orderDto) {
         this.qty = orderDto.getQty();
         this.totalPrice = orderDto.getUnitPrice() * orderDto.getQty();
+    }
+
+    public void deleteOrder(){
+        this.valid = false;
+    }
+
+    public void rollbackOrder(){
+        this.valid = true;
     }
 }

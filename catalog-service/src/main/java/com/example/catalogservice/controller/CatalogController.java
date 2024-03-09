@@ -3,7 +3,9 @@ package com.example.catalogservice.controller;
 import com.example.catalogservice.dto.CatalogDto;
 import com.example.catalogservice.service.CatalogService;
 import com.example.catalogservice.vo.RequestCatalog;
+import com.example.catalogservice.vo.RequestUpdateCatalog;
 import com.example.catalogservice.vo.ResponseCatalog;
+import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -13,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/catalog-service")
@@ -49,64 +50,38 @@ public class CatalogController {
     // 특정 물품 재고 확인
     @GetMapping("/{productId}/catalogs")
     public ResponseEntity<ResponseCatalog> getCatalog(@PathVariable String productId){
-        try{
-            CatalogDto catalog = catalogService.getCatalog(productId);
-            return ResponseEntity.status(HttpStatus.OK).body(new ModelMapper().map(catalog, ResponseCatalog.class));
-        }catch (NoSuchElementException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }catch (Exception ex){
-            ex.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        CatalogDto catalog = catalogService.getCatalog(productId);
+        return ResponseEntity.status(HttpStatus.OK).body(new ModelMapper().map(catalog, ResponseCatalog.class));
     }
 
     // 물품 입고
     @PostMapping("/catalogs")
-    public ResponseEntity<ResponseCatalog> createCatalog(@RequestBody RequestCatalog catalog){
+    public ResponseEntity<ResponseCatalog> createCatalog(@RequestBody @Valid RequestCatalog catalog){
         ModelMapper mapper = new ModelMapper();
         CatalogDto catalogDto = mapper.map(catalog, CatalogDto.class);
-        try{
-            CatalogDto createdCatalog = catalogService.createCatalog(catalogDto);
-            ResponseCatalog responseCatalog = mapper.map(createdCatalog, ResponseCatalog.class);
-            return ResponseEntity.status(HttpStatus.CREATED).body(responseCatalog);
-        }catch(NoSuchElementException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }catch(Exception ex){
-            ex.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+
+        CatalogDto createdCatalog = catalogService.createCatalog(catalogDto);
+
+        ResponseCatalog responseCatalog = mapper.map(createdCatalog, ResponseCatalog.class);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseCatalog);
     }
 
-    // 물품 정보 변경
+    // 물품 정보 변경 -> 이미 주문한 정보에는 굳이 반영할 필요 X
     @PatchMapping("/{productId}/catalogs")
-    public ResponseEntity<ResponseCatalog> updateCatalog(@PathVariable String productId, @RequestBody RequestCatalog catalog){
+    public ResponseEntity<ResponseCatalog> updateCatalog(@PathVariable String productId, @RequestBody @Valid RequestUpdateCatalog catalog){
         ModelMapper mapper = new ModelMapper();
         CatalogDto catalogDto = mapper.map(catalog, CatalogDto.class);
-        try{
-            CatalogDto updatedCatalog = catalogService.updateCatalog(productId, catalogDto);
-            ResponseCatalog responseCatalog = mapper.map(updatedCatalog, ResponseCatalog.class);
-            return ResponseEntity.status(HttpStatus.OK).body(responseCatalog);
-        }catch(NoSuchElementException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-        catch(Exception ex){
-            ex.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+
+        CatalogDto updatedCatalog = catalogService.updateCatalog(productId, catalogDto);
+
+        ResponseCatalog responseCatalog = mapper.map(updatedCatalog, ResponseCatalog.class);
+        return ResponseEntity.status(HttpStatus.OK).body(responseCatalog);
     }
 
     // 물품 삭제
     @DeleteMapping("/{productId}/catalogs")
     public ResponseEntity<ResponseCatalog> deleteCatalog(@PathVariable String productId){
-        try{
-            catalogService.deleteCatalog(productId);
-            return ResponseEntity.status(HttpStatus.OK).build();
-        }catch(NoSuchElementException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-        catch(Exception ex){
-            ex.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        catalogService.deleteCatalog(productId);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

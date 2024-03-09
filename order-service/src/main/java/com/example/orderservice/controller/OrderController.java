@@ -1,8 +1,6 @@
 package com.example.orderservice.controller;
 
 import com.example.orderservice.dto.OrderDto;
-import com.example.orderservice.messagequeue.KafkaProducer;
-import com.example.orderservice.messagequeue.OrderProducer;
 import com.example.orderservice.service.OrderService;
 import com.example.orderservice.vo.RequestOrder;
 import com.example.orderservice.vo.RequestUpdateOrder;
@@ -26,15 +24,15 @@ import java.util.List;
 public class OrderController {
     Environment env;
     OrderService orderService;
-    KafkaProducer kafkaProducer;
-    OrderProducer orderProducer;
+//    KafkaProducer kafkaProducer;
+//    OrderProducer orderProducer;
 
     @Autowired
-    public OrderController(Environment env, OrderService orderService, KafkaProducer kafkaProducer, OrderProducer orderProducer) {
+    public OrderController(Environment env, OrderService orderService) {
         this.env = env;
         this.orderService = orderService;
-        this.kafkaProducer = kafkaProducer;
-        this.orderProducer = orderProducer;
+//        this.kafkaProducer = kafkaProducer;
+//        this.orderProducer = orderProducer;
     }
 
     @GetMapping("/health_check")

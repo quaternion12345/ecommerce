@@ -1,9 +1,7 @@
 package com.example.orderservice.jpa;
 
-import jakarta.persistence.*;
-import lombok.Data;
+import jakarta.persistence.Id;
 import lombok.Getter;
-import org.hibernate.annotations.ColumnDefault;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
@@ -26,6 +24,8 @@ public class MongoOrderEntity implements Serializable {
     private String userId;
 
     private String orderId;
+
+    private boolean valid;
 
     private Date createdAt;
 }
